@@ -18,7 +18,7 @@ async function resetAdmin() {
       process.exit(1);
     }
 
-    const hashedPassword = await bcrypt.hash('Admin12345', 10);
+    const hashedPassword = await bcrypt.hash('Admin1234', 10);
 
     await admin.update({
       password: hashedPassword,
@@ -27,7 +27,7 @@ async function resetAdmin() {
 
     console.log('Admin password reset successfully.');
     console.log('Email: admin@teerop.com');
-    console.log('Password: Admin12345');
+    console.log('Password: Admin1234');
 
     await sequelize.close();
   } catch (error) {
