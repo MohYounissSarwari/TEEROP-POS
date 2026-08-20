@@ -6,14 +6,26 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
+const path = require('path');
+
 const { sequelize, syncDatabase } = require('./src/models');
 const errorHandler = require('./src/middleware/errorHandler');
+
+// Phase 3: Authentication routes
+const authRoutes = require('./src/routes/auth');
+
+// Phase 4: Product routes
+const productRoutes = require('./src/routes/products');
 
 const app = express();
 
 // ── Global middleware ─────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Serve uploaded product images
+app.use('/uploads', express.static('uploads'));
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
@@ -25,10 +37,12 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ── Routes (added in later phases) ───────────────────────────────────────────
-// app.use('/api/auth',     require('./src/routes/auth'));
-// app.use('/api/users',    require('./src/routes/users'));
-// app.use('/api/products', require('./src/routes/products'));
+// ── API Routes ───────────────────────────────────────────────────────────────
+app.use('/api/auth', authRoutes);
+app.use('/api/users', require('./src/routes/users'));
+app.use('/api/products', require('./src/routes/products'));
+app.use('/api/transactions', require('./src/routes/transactions'));
+app.use('/api/statistics', require('./src/routes/statistics'));
 
 // ── 404 handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {
@@ -39,7 +53,7 @@ app.use((req, res) => {
   });
 });
 
-// ── Centralised error handler (must be last) ──────────────────────────────────
+// ── Centralised error handler ────────────────────────────────────────────────
 app.use(errorHandler);
 
 // ── Start server ─────────────────────────────────────────────────────────────
@@ -47,11 +61,9 @@ const PORT = process.env.PORT || 5000;
 
 const start = async () => {
   try {
-    // Verify the database connection
     await sequelize.authenticate();
     console.log('[DB] PostgreSQL connection established');
 
-    // Sync models (development only — alter: true, non-destructive)
     await syncDatabase();
 
     app.listen(PORT, () => {
